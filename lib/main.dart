@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_calendar/event_firestore_service.dart';
+import 'package:flutter_calendar/add_event.dart';
+import 'package:flutter_calendar/view_event.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'event.dart';
 
 void main() => runApp(MyApp());
 
@@ -12,6 +16,9 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       home: HomePage(),
+      routes: {
+        "add_event": (_) => AddEventPage(),
+      },
     );
   }
 }
@@ -23,12 +30,15 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   CalendarController _controller;
+  Map<DateTime, List<dynamic>> _events;
+  List<dynamic> _selectedEvents;
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _controller = CalendarController();
+    _events = {};
+    _selectedEvents = [];
   }
 
   @override
@@ -42,8 +52,10 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             TableCalendar(
+              events: _events,
               initialCalendarFormat: CalendarFormat.week,
               calendarStyle: CalendarStyle(
+                  canEventMarkersOverflow: true,
                   todayColor: Colors.orange,
                   selectedColor: Theme.of(context).primaryColor,
                   todayStyle: TextStyle(
@@ -61,7 +73,9 @@ class _HomePageState extends State<HomePage> {
               ),
               startingDayOfWeek: StartingDayOfWeek.monday,
               onDaySelected: (date, events) {
-                print(date.toIso8601String());
+                setState(() {
+                  _selectedEvents = events;
+                });
               },
               builders: CalendarBuilders(
                 selectedDayBuilder: (context, date, events) => Container(
@@ -86,9 +100,24 @@ class _HomePageState extends State<HomePage> {
                     )),
               ),
               calendarController: _controller,
-            )
+            ),
+            ..._selectedEvents.map((event) => ListTile(
+                  title: Text(event.title),
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => EventDetailsPage(
+                                  event: event,
+                                )));
+                  },
+                )),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: () => Navigator.pushNamed(context, 'add_event'),
       ),
     );
   }
